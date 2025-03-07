@@ -89,10 +89,13 @@ def get_pixels_from_image(image_size, camera):
     W, H = image_size[0], image_size[1]
 
     # TODO (Q1.3): Generate pixel coordinates from [0, W] in x and [0, H] in y
-    pass
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    x = torch.arange(W, dtype=torch.float32).to(device)
+    y = torch.arange(H, dtype=torch.float32).to(device)
 
     # TODO (Q1.3): Convert to the range [-1, 1] in both x and y
-    pass
+    x = 2 * (x / (W - 1)) - 1
+    y = 2 * (y / (H - 1)) - 1
 
     # Create grid of coordinates
     xy_grid = torch.stack(
@@ -108,7 +111,6 @@ def get_random_pixels_from_image(n_pixels, image_size, camera):
     xy_grid = get_pixels_from_image(image_size, camera)
     
     # TODO (Q2.1): Random subsampling of pixel coordinaters
-    pass
 
     # Return
     return xy_grid_sub.reshape(-1, 2)[:n_pixels]
@@ -119,7 +121,7 @@ def get_rays_from_pixels(xy_grid, image_size, camera):
     W, H = image_size[0], image_size[1]
 
     # TODO (Q1.3): Map pixels to points on the image plane at Z=1
-    pass
+    ndc_points = xy_grid
 
     ndc_points = torch.cat(
         [
@@ -130,13 +132,14 @@ def get_rays_from_pixels(xy_grid, image_size, camera):
     )
 
     # TODO (Q1.3): Use camera.unproject to get world space points from NDC space points
-    pass
+    image_plane_points = camera.unproject_points(ndc_points, world_coordinates=True, from_ndc=True)
 
     # TODO (Q1.3): Get ray origins from camera center
-    pass
+    rays_o = camera.get_camera_center().expand_as(image_plane_points)
 
     # TODO (Q1.3): Get ray directions as image_plane_points - rays_o
-    pass
+    rays_d = image_plane_points - rays_o
+    rays_d = F.normalize(rays_d, dim=-1)
 
     # Create and return RayBundle
     return RayBundle(
